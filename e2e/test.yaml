@@ -1,38 +1,25 @@
 apiVersion: v1
-kind: Service
-metadata:
-  name: curl
-  labels:
-    app: curl
-spec:
-  ports:
-    - port: 8008
-      name: http
-  selector:
-    app: curl
----
-apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: curl
+  name: test
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: curl
+  name: test
 spec:
   selector:
     matchLabels:
-      app: curl
+      app: test
   replicas: 1
   template:
     metadata:
       labels:
-        app: curl
+        app: test
     spec:
-      serviceAccountName: curl
+      serviceAccountName: test
       containers:
-        - name: curl
+        - name: test
           image: poke/test:latest
           command: ["/bin/sleep", "10000000"]
           imagePullPolicy: IfNotPresent

@@ -135,9 +135,9 @@ func setupRuntimeScanTestEnv(stopCh chan struct{}) error {
 	println("creating namespace test...")
 	envfuncs.CreateNamespace("test")
 
-	println("deploying curl to test namespace...")
-	if err := common.InstallCurl("test"); err != nil {
-		return fmt.Errorf("failed to install curl: %v", err)
+	println("deploying test image to test namespace...")
+	if err := common.InstallTest("test"); err != nil {
+		return fmt.Errorf("failed to install test image: %v", err)
 	}
 
 	println("deploying kubeclarity...")

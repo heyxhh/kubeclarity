@@ -31,8 +31,8 @@ import (
 
 // EXPORTED:
 
-func InstallCurl(ns string) error {
-	cmd := exec.Command("kubectl", "-n", ns, "apply", "-f", "curl.yaml")
+func InstallTest(ns string) error {
+	cmd := exec.Command("kubectl", "-n", ns, "apply", "-f", "test.yaml")
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -48,6 +48,9 @@ func LoadDockerImagesToCluster(cluster, tag string) error {
 	if err := LoadDockerImageToCluster(cluster, fmt.Sprintf("ghcr.io/openclarity/kubeclarity-sbom-db:%v", tag)); err != nil {
 		return fmt.Errorf("failed to load docker image to cluster: %v", err)
 	}
+	// ghcr.io/openclarity/kubeclarity-cli
+	// ghcr.io/openclarity/kubeclarity-runtime-k8s-scanner
+	// ghcr.io/openclarity/kubeclarity-cis-docker-benchmark-scanner
 	if err := LoadDockerImageToCluster(cluster, fmt.Sprintf("gcr.io/eticloud/k8sec/grype-server:%v", tag)); err != nil {
 		return fmt.Errorf("failed to load docker image to cluster: %v", err)
 	}
