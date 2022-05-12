@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
 
 	"github.com/openclarity/kubeclarity/api/client/client"
-	"github.com/openclarity/kubeclarity/e2e/utils"
+	"github.com/openclarity/kubeclarity/e2e/common"
 )
 
 var (
@@ -53,12 +53,12 @@ func TestMain(m *testing.M) {
 
 			println("DOCKER_TAG=", tag)
 
-			if err := utils.LoadDockerImagesToCluster(kindClusterName, tag); err != nil {
+			if err := common.LoadDockerImagesToCluster(kindClusterName, tag); err != nil {
 				fmt.Printf("Failed to load docker images to cluster: %v", err)
 				return nil, err
 			}
 
-			clientTransport := httptransport.New("localhost:"+utils.KubeClarityPortForwardHostPort, client.DefaultBasePath, []string{"http"})
+			clientTransport := httptransport.New("localhost:"+common.KubeClarityPortForwardHostPort, client.DefaultBasePath, []string{"http"})
 			kubeclarityAPI = client.New(clientTransport, strfmt.Default)
 
 			KubeconfigFile = cfg.KubeconfigFile()

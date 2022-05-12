@@ -33,7 +33,7 @@ spec:
       serviceAccountName: curl
       containers:
         - name: curl
-          image: radial/busyboxplus:curl
+          image: poke/test:latest
           command: ["/bin/sleep", "10000000"]
           imagePullPolicy: IfNotPresent
 ---

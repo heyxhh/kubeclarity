@@ -29,7 +29,7 @@ import (
 
 	"github.com/openclarity/kubeclarity/api/client/client/operations"
 	"github.com/openclarity/kubeclarity/api/client/models"
-	"github.com/openclarity/kubeclarity/e2e/utils"
+	"github.com/openclarity/kubeclarity/e2e/common"
 )
 
 var want = &models.RuntimeScanResults{
@@ -84,7 +84,7 @@ func TestRuntimeScan(t *testing.T) {
 	f1 := features.New("assert results").
 		WithLabel("type", "assert").
 		Assess("vulnerability in DB", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			utils.AssertGetRuntimeScanResults(t, kubeclarityAPI, want)
+			common.AssertGetRuntimeScanResults(t, kubeclarityAPI, want)
 			return ctx
 		}).Feature()
 
@@ -136,24 +136,24 @@ func setupRuntimeScanTestEnv(stopCh chan struct{}) error {
 	envfuncs.CreateNamespace("test")
 
 	println("deploying curl to test namespace...")
-	if err := utils.InstallCurl("test"); err != nil {
+	if err := common.InstallCurl("test"); err != nil {
 		return fmt.Errorf("failed to install curl: %v", err)
 	}
 
 	println("deploying kubeclarity...")
-	if err := utils.InstallKubeClarity(helmManager, "--create-namespace --wait'"); err != nil {
+	if err := common.InstallKubeClarity(helmManager, "--create-namespace --wait'"); err != nil {
 		return fmt.Errorf("failed to install kubeclarity: %v", err)
 	}
 
 	println("waiting for kubeclarity to run...")
-	if err := utils.WaitForKubeClarityPodRunning(k8sClient); err != nil {
-		utils.DescribeKubeClarityDeployment()
-		utils.DescribeKubeClarityPods()
+	if err := common.WaitForKubeClarityPodRunning(k8sClient); err != nil {
+		common.DescribeKubeClarityDeployment()
+		common.DescribeKubeClarityPods()
 		return fmt.Errorf("failed to wait for kubeclarity pod to be running: %v", err)
 	}
 
 	println("port-forward to kubeclarity...")
-	utils.PortForwardToKubeClarity(stopCh)
+	common.PortForwardToKubeClarity(stopCh)
 
 	return nil
 }
