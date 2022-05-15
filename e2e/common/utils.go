@@ -49,12 +49,10 @@ func LoadDockerImagesToCluster(cluster, tag string) error {
 		return fmt.Errorf("failed to load docker image to cluster: %v", err)
 	}
 	// ghcr.io/openclarity/kubeclarity-cli
-	// ghcr.io/openclarity/kubeclarity-runtime-k8s-scanner
-	// ghcr.io/openclarity/kubeclarity-cis-docker-benchmark-scanner
-	if err := LoadDockerImageToCluster(cluster, fmt.Sprintf("gcr.io/eticloud/k8sec/grype-server:%v", tag)); err != nil {
+	if err := LoadDockerImageToCluster(cluster, fmt.Sprintf("ghcr.io/openclarity/kubeclarity-runtime-k8s-scanner:%v", tag)); err != nil {
 		return fmt.Errorf("failed to load docker image to cluster: %v", err)
 	}
-	if err := LoadDockerImageToCluster(cluster, "docker.io/bitnami/postgresql:11.13.0-debian-10-r40"); err != nil {
+	if err := LoadDockerImageToCluster(cluster, fmt.Sprintf("ghcr.io/openclarity/kubeclarity-cis-docker-benchmark-scanner:%v", tag)); err != nil {
 		return fmt.Errorf("failed to load docker image to cluster: %v", err)
 	}
 

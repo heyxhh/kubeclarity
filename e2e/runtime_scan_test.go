@@ -141,7 +141,10 @@ func setupRuntimeScanTestEnv(stopCh chan struct{}) error {
 	}
 
 	println("deploying kubeclarity...")
-	if err := common.InstallKubeClarity(helmManager, "--create-namespace --wait'"); err != nil {
+	if err := common.InstallKubeClarity(helmManager, "--create-namespace --set 'kubeclarity.docker.imagePullPolicy=IfNotPresent'" +
+		" --set 'kubeclarity-runtime-scan.cis-docker-benchmark-scanner.docker.imagePullPolicy=IfNotPresent'" +
+		" --set 'kubeclarity-runtime-scan.vulnerability-scanner.docker.imagePullPolicy=IfNotPresent'" +
+		" --set 'kubeclarity-sbom-db.docker.imagePullPolicy=IfNotPresent' --wait"); err != nil {
 		return fmt.Errorf("failed to install kubeclarity: %v", err)
 	}
 
