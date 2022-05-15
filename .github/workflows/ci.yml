@@ -39,7 +39,7 @@ jobs:
     needs: [verification, build_all]
     name: E2E
     runs-on: ubuntu-latest
-    stpes:
+    steps:
       - name: Edit values.yaml
         id: edit_values
         run: |
