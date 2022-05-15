@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
-	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 	"sigs.k8s.io/e2e-framework/third_party/helm"
 
@@ -133,7 +132,9 @@ func setupRuntimeScanTestEnv(stopCh chan struct{}) error {
 	helmManager := helm.New(KubeconfigFile)
 
 	println("creating namespace test...")
-	envfuncs.CreateNamespace("test")
+	if err := common.CreateNamespace(k8sClient,"test"); err != nil {
+		return fmt.Errorf("failed to create test namepsace: %v", err)
+	}
 
 	println("deploying test image to test namespace...")
 	if err := common.InstallTest("test"); err != nil {

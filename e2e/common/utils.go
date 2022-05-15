@@ -129,6 +129,23 @@ func WaitForKubeClarityPodRunning(client klient.Client) error {
 	}
 }
 
+
+func CreateNamespace(client klient.Client ,name string) error {
+	var ns = v1.Namespace{
+		TypeMeta:   v12.TypeMeta{
+			Kind:       "Namespace",
+			APIVersion: "v1",
+		},
+		ObjectMeta: v12.ObjectMeta{
+			Name:                       name,
+		},
+	}
+	if err := client.Resources(name).Create(context.TODO(), &ns); err != nil {
+		return err
+	}
+	return nil
+}
+
 // NON EXPORTED:
 
 func portForward(kind, namespace, name, hostPort, targetPort string, stopCh chan struct{}) (error, []byte) {
