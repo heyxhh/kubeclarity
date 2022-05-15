@@ -43,6 +43,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Build All Done
+        run: ls; ls charts; ls charts/kubeclarity
+      - name: Build All Done
         run: echo "Done"
       - name: Edit values.yaml
         id: edit_values
