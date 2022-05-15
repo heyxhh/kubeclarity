@@ -17,7 +17,6 @@ package e2e
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
 
@@ -49,14 +48,14 @@ func TestMain(m *testing.M) {
 			println("Setup")
 			k8sClient = cfg.Client()
 
-			tag := os.Getenv("DOCKER_TAG")
+			//tag := os.Getenv("DOCKER_TAG")
 
-			println("DOCKER_TAG=", tag)
-
-			if err := common.LoadDockerImagesToCluster(kindClusterName, tag); err != nil {
-				fmt.Printf("Failed to load docker images to cluster: %v", err)
-				return nil, err
-			}
+			//println("DOCKER_TAG=", tag)
+			//
+			//if err := common.LoadDockerImagesToCluster(kindClusterName, tag); err != nil {
+			//	fmt.Printf("Failed to load docker images to cluster: %v", err)
+			//	return nil, err
+			//}
 
 			clientTransport := httptransport.New("localhost:"+common.KubeClarityPortForwardHostPort, client.DefaultBasePath, []string{"http"})
 			kubeclarityAPI = client.New(clientTransport, strfmt.Default)
