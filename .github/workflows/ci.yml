@@ -48,8 +48,8 @@ jobs:
         id: edit_values
         run: |
           tag=${{ github.sha }}
-          sed -i 's/latest/'"$tag"'/g' charts/kubeclarity/values.yaml
-          cat charts/kubeclarity/values.yaml
+          sed -i 's/latest/'"$tag"'/g' ./charts/kubeclarity/values.yaml
+          cat ./charts/kubeclarity/values.yaml
       - name: Run e2e tests
         run: make e2e
 #  lint_chart:
