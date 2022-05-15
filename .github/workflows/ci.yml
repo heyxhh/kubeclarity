@@ -27,7 +27,6 @@ jobs:
 #
 #      - name: Run verification
 #        run: make check
-
   build_all:
     needs: verification
     name: Build
@@ -35,6 +34,11 @@ jobs:
     with:
       image_tag: ${{ github.sha }}
       push: false
+
+  e2e:
+    needs: [verification, build_all]
+    name: E2E
+    runs-on: ubuntu-latest
     stpes:
       - name: Edit values.yaml
         id: edit_values
@@ -52,17 +56,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Build All Done
-        run: ls; ls charts; ls charts/kubeclarity
-      - name: Build All Done
         run: echo "Done"
-      - name: Edit values.yaml
-        id: edit_values
-        run: |
-          tag=${{ github.sha }}
-          sed -i 's/latest/'"$tag"'/g' ./charts/kubeclarity/values.yaml
-          cat ./charts/kubeclarity/values.yaml
-      - name: Run e2e tests
-        run: make e2e
+
 #  lint_chart:
 #    name: Lint Helm Chart
 #    runs-on: ubuntu-latest
