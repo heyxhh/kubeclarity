@@ -35,6 +35,15 @@ jobs:
     with:
       image_tag: ${{ github.sha }}
       push: false
+    stpes:
+      - name: Edit values.yaml
+        id: edit_values
+        run: |
+          tag=${{ github.sha }}
+          sed -i 's/latest/'"$tag"'/g' ./charts/kubeclarity/values.yaml
+          cat ./charts/kubeclarity/values.yaml
+      - name: Run e2e tests
+        run: make e2e
 
 # We are using the following step to be the status check in the PRs
   build:
