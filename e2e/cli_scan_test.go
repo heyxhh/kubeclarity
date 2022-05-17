@@ -19,29 +19,28 @@ import (
 	"context"
 	"fmt"
 	"gotest.tools/assert"
+	"os"
+	"os/exec"
 	"testing"
-	"time"
 
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 	"sigs.k8s.io/e2e-framework/third_party/helm"
 
-	"github.com/openclarity/kubeclarity/api/client/client/operations"
-	"github.com/openclarity/kubeclarity/api/client/models"
 	"github.com/openclarity/kubeclarity/e2e/common"
 )
 
-func TestRuntimeScan(t *testing.T) {
+func TestCLIScan(t *testing.T) {
 	stopCh := make(chan struct{})
 	//defer func() {
 	//	stopCh <- struct{}{}
 	//	time.Sleep(2 * time.Second)
 	//}()
-	assert.NilError(t, setupRuntimeScanTestEnv(stopCh))
+	assert.NilError(t, setupCLIScanTestEnv(stopCh))
 
-	assert.NilError(t, startRuntimeScan([]string{"test"}))
+	assert.NilError(t, startCLIScan(t))
 	// wait for progress DONE
-	assert.NilError(t, waitForScanDone())
+	// assert.NilError(t, waitForScanDone())
 
 	f1 := features.New("assert results").
 		WithLabel("type", "assert").
@@ -61,41 +60,55 @@ func TestRuntimeScan(t *testing.T) {
 	testenv.Test(t, f1)
 }
 
-func startRuntimeScan(namespaces []string) error {
-	params := operations.NewPutRuntimeScanStartParams().WithBody(&models.RuntimeScanConfig{
-		Namespaces: namespaces,
-	})
-	_, err := kubeclarityAPI.Operations.PutRuntimeScanStart(params)
-	return err
-}
+// analyze dir with gomod and syft  - output sbom
+// analyze image with syft and merge sbom - output sbom
+// check sbom output is merged
 
-func waitForScanDone() error {
-	timer := time.NewTimer(3 * time.Minute)
-	ticker := time.NewTicker(3 * time.Second)
-	for {
-		select {
-		case <-timer.C:
-			return fmt.Errorf("timeout reached")
-		case <-ticker.C:
-			params := operations.NewGetRuntimeScanProgressParams()
-			res, err := kubeclarityAPI.Operations.GetRuntimeScanProgress(params)
-			if err != nil {
-				return err
-			}
-			if res.Payload.Status == models.RuntimeScanStatusDONE {
-				return nil
-			}
-		}
+// vul scan - on merged sbom - check db
+// vul scan on image
+
+func startCLIScan(t *testing.T) error {
+	assert.NilError(t, os.Setenv("BACKEND_HOST", "localhost:"+common.KubeClarityPortForwardHostPort))
+	assert.NilError(t, os.Setenv("BACKEND_DISABLE_TLS", "true"))
+	assert.NilError(t, os.Setenv("ANALYZER_LIST", "syft")) // TODO do we want to use all the analyzers?
+	cmd := exec.Command("kubeclarity-cli", "analyze", "-o", "test.sbom")
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to execute command. %v, %s", err, out)
 	}
+	// analyze - use all supported analyzers?
+	// scan - use all supported scanners?
+	// export all results to kubeclarity backend (in both stages)
 }
 
-func setupRuntimeScanTestEnv(stopCh chan struct{}) error {
-	println("Set up runtime scan test env...")
+//func waitForScanDone() error {
+//	timer := time.NewTimer(3 * time.Minute)
+//	ticker := time.NewTicker(3 * time.Second)
+//	for {
+//		select {
+//		case <-timer.C:
+//			return fmt.Errorf("timeout reached")
+//		case <-ticker.C:
+//			params := operations.NewGetRuntimeScanProgressParams()
+//			res, err := kubeclarityAPI.Operations.GetRuntimeScanProgress(params)
+//			if err != nil {
+//				return err
+//			}
+//			if res.Payload.Status == models.RuntimeScanStatusDONE {
+//				return nil
+//			}
+//		}
+//	}
+//}
+
+func setupCLIScanTestEnv(stopCh chan struct{}) error {
+	println("Set up cli scan test env...")
 
 	helmManager := helm.New(KubeconfigFile)
 
 	println("creating namespace test...")
-	if err := common.CreateNamespace(k8sClient,"test"); err != nil {
+	if err := common.CreateNamespace(k8sClient, "test"); err != nil {
 		return fmt.Errorf("failed to create test namepsace: %v", err)
 	}
 
