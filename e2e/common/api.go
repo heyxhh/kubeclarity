@@ -20,7 +20,7 @@ func GetRuntimeScanResults(t *testing.T, kubeclarityAPI *client.KubeClarityAPIs)
 }
 
 func GetPackages(t *testing.T, kubeclarityAPI *client.KubeClarityAPIs) *operations.GetPackagesOKBody {
-	params := operations.NewGetPackagesParams()
+	params := operations.NewGetPackagesParams().WithPage(0).WithPageSize(50).WithSortKey("packageName")
 	res, err := kubeclarityAPI.Operations.GetPackages(params)
 	assert.NilError(t, err)
 
@@ -28,7 +28,7 @@ func GetPackages(t *testing.T, kubeclarityAPI *client.KubeClarityAPIs) *operatio
 }
 
 func GetApplicationResources(t *testing.T, kubeclarityAPI *client.KubeClarityAPIs) *operations.GetApplicationResourcesOKBody {
-	params := operations.NewGetApplicationResourcesParams()
+	params := operations.NewGetApplicationResourcesParams().WithPage(0).WithPageSize(50).WithSortKey("resourceName")
 	res, err := kubeclarityAPI.Operations.GetApplicationResources(params)
 	assert.NilError(t, err)
 
@@ -36,7 +36,7 @@ func GetApplicationResources(t *testing.T, kubeclarityAPI *client.KubeClarityAPI
 }
 
 func GetVulnerabilities(t *testing.T, kubeclarityAPI *client.KubeClarityAPIs) *operations.GetVulnerabilitiesOKBody {
-	params := operations.NewGetVulnerabilitiesParams()
+	params := operations.NewGetVulnerabilitiesParams().WithPage(0).WithPageSize(50).WithSortKey("vulnerabilityName")
 	res, err := kubeclarityAPI.Operations.GetVulnerabilities(params)
 	assert.NilError(t, err)
 

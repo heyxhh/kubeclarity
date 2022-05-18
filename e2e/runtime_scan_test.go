@@ -100,6 +100,10 @@ func setupRuntimeScanTestEnv(stopCh chan struct{}) error {
 		return fmt.Errorf("failed to install test image: %v", err)
 	}
 
+	if err := common.WaitForPodRunning(k8sClient, "test", "app=test"); err != nil {
+		return fmt.Errorf("failed to wait for test pod running: %v", err)
+	}
+
 	println("port-forward to kubeclarity...")
 	common.PortForwardToKubeClarity(stopCh)
 

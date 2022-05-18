@@ -75,15 +75,15 @@ func TestMain(m *testing.M) {
 	)
 	testenv.BeforeEachTest(
 		func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
-			println("BeforeEachTest")
+			t.Logf("BeforeEachTest")
 
-			println("deploying kubeclarity...")
+			t.Logf("deploying kubeclarity...")
 			if err := common.InstallKubeClarity(helmManager, "--create-namespace --wait"); err != nil {
 				return nil, fmt.Errorf("failed to install kubeclarity: %v", err)
 			}
 
-			println("waiting for kubeclarity to run...")
-			if err := common.WaitForKubeClarityPodRunning(k8sClient); err != nil {
+			t.Logf("waiting for kubeclarity to run...")
+			if err := common.WaitForPodRunning(k8sClient, common.KubeClarityNamespace, "app=kubeclarity-kubeclarity"); err != nil {
 				common.DescribeKubeClarityDeployment()
 				common.DescribeKubeClarityPods()
 				return nil, fmt.Errorf("failed to wait for kubeclarity pod to be running: %v", err)
@@ -94,8 +94,9 @@ func TestMain(m *testing.M) {
 	)
 	testenv.AfterEachTest(
 		func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
-			println("AfterEachTest")
+			t.Logf("AfterEachTest")
 
+			t.Logf("uninstalling kubeclarity...")
 			assert.NilError(t, common.UninstallKubeClarity())
 			return ctx, nil
 		},

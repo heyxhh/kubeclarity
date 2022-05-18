@@ -132,7 +132,7 @@ func StringPtr(val string) *string {
 }
 
 //TODO use https://github.com/kubernetes-sigs/e2e-framework/tree/main/examples/wait_for_resources
-func WaitForKubeClarityPodRunning(client klient.Client) error {
+func WaitForPodRunning(client klient.Client, ns string, labelSelector string) error {
 	podList := v1.PodList{}
 	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
@@ -142,10 +142,10 @@ func WaitForKubeClarityPodRunning(client klient.Client) error {
 		case <-timeout.C:
 			return fmt.Errorf("timeout reached")
 		case <-ticker.C:
-			if err := client.Resources(KubeClarityNamespace).List(context.TODO(), &podList, func(lo *v12.ListOptions) {
-				lo.LabelSelector = "app=kubeclarity-kubeclarity"
+			if err := client.Resources(ns).List(context.TODO(), &podList, func(lo *v12.ListOptions) {
+				lo.LabelSelector = labelSelector
 			}); err != nil {
-				return fmt.Errorf("failed to get pod kubeclarity. %v", err)
+				return fmt.Errorf("failed to get pod in namespace: %v and labels: %v. %v", ns, labelSelector, err)
 			}
 			pod := podList.Items[0]
 			if pod.Status.Phase == v1.PodRunning {
