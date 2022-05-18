@@ -24,7 +24,6 @@ import (
 
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
-	"sigs.k8s.io/e2e-framework/third_party/helm"
 
 	"github.com/openclarity/kubeclarity/api/client/client/operations"
 	"github.com/openclarity/kubeclarity/api/client/models"
@@ -33,29 +32,28 @@ import (
 
 func TestRuntimeScan(t *testing.T) {
 	stopCh := make(chan struct{})
-	//defer func() {
-	//	stopCh <- struct{}{}
-	//	time.Sleep(2 * time.Second)
-	//}()
-	assert.NilError(t, setupRuntimeScanTestEnv(stopCh))
-
-	assert.NilError(t, startRuntimeScan([]string{"test"}))
-	// wait for progress DONE
-	assert.NilError(t, waitForScanDone())
-
+	defer func() {
+		stopCh <- struct{}{}
+		time.Sleep(2 * time.Second)
+	}()
 	f1 := features.New("assert results").
 		WithLabel("type", "assert").
 		Assess("vulnerability in DB", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			common.AssertGetRuntimeScanResults(t, kubeclarityAPI)
+			assert.NilError(t, setupRuntimeScanTestEnv(stopCh))
+
+			assert.NilError(t, startRuntimeScan([]string{"test"}))
+			// wait for progress DONE
+			assert.NilError(t, waitForScanDone())
+
+			results := common.GetRuntimeScanResults(t, kubeclarityAPI)
+			assert.Assert(t, results.Counters.Resources > 0)
+			assert.Assert(t, results.Counters.Vulnerabilities > 0)
+			assert.Assert(t, results.Counters.Packages > 0)
+			assert.Assert(t, results.Counters.Applications > 0)
+
+			assert.Assert(t, len(results.VulnerabilityPerSeverity) > 0)
 			return ctx
 		}).Feature()
-
-	//f2 := features.New("spec").
-	//	WithLabel("type", "spec").
-	//	Assess("spec exist in DB", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-	//		utils.AssertGetAPIInventory(t, kubeclarityAPI, wantGetAPIInventoryOKBody)
-	//		return ctx
-	//	}).Feature()
 
 	// test features
 	testenv.Test(t, f1)
@@ -92,28 +90,14 @@ func waitForScanDone() error {
 func setupRuntimeScanTestEnv(stopCh chan struct{}) error {
 	println("Set up runtime scan test env...")
 
-	helmManager := helm.New(KubeconfigFile)
-
 	println("creating namespace test...")
-	if err := common.CreateNamespace(k8sClient,"test"); err != nil {
+	if err := common.CreateNamespace(k8sClient, "test"); err != nil {
 		return fmt.Errorf("failed to create test namepsace: %v", err)
 	}
 
 	println("deploying test image to test namespace...")
 	if err := common.InstallTest("test"); err != nil {
 		return fmt.Errorf("failed to install test image: %v", err)
-	}
-
-	println("deploying kubeclarity...")
-	if err := common.InstallKubeClarity(helmManager, "--create-namespace --wait"); err != nil {
-		return fmt.Errorf("failed to install kubeclarity: %v", err)
-	}
-
-	println("waiting for kubeclarity to run...")
-	if err := common.WaitForKubeClarityPodRunning(k8sClient); err != nil {
-		common.DescribeKubeClarityDeployment()
-		common.DescribeKubeClarityPods()
-		return fmt.Errorf("failed to wait for kubeclarity pod to be running: %v", err)
 	}
 
 	println("port-forward to kubeclarity...")

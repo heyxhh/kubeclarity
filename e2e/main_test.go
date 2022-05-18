@@ -17,6 +17,8 @@ package e2e
 
 import (
 	"context"
+	"fmt"
+	"gotest.tools/assert"
 	"os"
 	"testing"
 
@@ -26,6 +28,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
+	"sigs.k8s.io/e2e-framework/third_party/helm"
 
 	"github.com/openclarity/kubeclarity/api/client/client"
 	"github.com/openclarity/kubeclarity/e2e/common"
@@ -36,6 +39,7 @@ var (
 	KubeconfigFile string
 	kubeclarityAPI *client.KubeClarityAPIs
 	k8sClient      klient.Client
+	helmManager    *helm.Manager
 )
 
 func TestMain(m *testing.M) {
@@ -61,17 +65,38 @@ func TestMain(m *testing.M) {
 			kubeclarityAPI = client.New(clientTransport, strfmt.Default)
 
 			KubeconfigFile = cfg.KubeconfigFile()
+			helmManager = helm.New(KubeconfigFile)
 
 			return ctx, nil
 		},
 	)
-
 	testenv.Finish(
 		envfuncs.DestroyKindCluster(kindClusterName),
-	).BeforeEachTest(
-		func(ctx context.Context, _ *envconf.Config, _ *testing.T) (context.Context, error) {
+	)
+	testenv.BeforeEachTest(
+		func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
 			println("BeforeEachTest")
 
+			println("deploying kubeclarity...")
+			if err := common.InstallKubeClarity(helmManager, "--create-namespace --wait"); err != nil {
+				return nil, fmt.Errorf("failed to install kubeclarity: %v", err)
+			}
+
+			println("waiting for kubeclarity to run...")
+			if err := common.WaitForKubeClarityPodRunning(k8sClient); err != nil {
+				common.DescribeKubeClarityDeployment()
+				common.DescribeKubeClarityPods()
+				return nil, fmt.Errorf("failed to wait for kubeclarity pod to be running: %v", err)
+			}
+
+			return ctx, nil
+		},
+	)
+	testenv.AfterEachTest(
+		func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
+			println("AfterEachTest")
+
+			assert.NilError(t, common.UninstallKubeClarity())
 			return ctx, nil
 		},
 	)

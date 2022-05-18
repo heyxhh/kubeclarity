@@ -72,6 +72,10 @@ func LoadDockerImageToCluster(cluster, image string) error {
 var curDir, _ = os.Getwd()
 var chartPath = filepath.Join(curDir, "../charts/kubeclarity")
 
+func GetCurrentDir() string {
+	return curDir
+}
+
 func InstallKubeClarity(manager *helm.Manager, args string) error {
 	if err := manager.RunInstall(helm.WithName(KubeClarityHelmReleaseName),
 		helm.WithVersion("v1.1"),
@@ -83,12 +87,34 @@ func InstallKubeClarity(manager *helm.Manager, args string) error {
 	return nil
 }
 
+func UninstallKubeClarity() error {
+	// uninstall kubeclarity
+	cmd := exec.Command("helm", "uninstall", KubeClarityHelmReleaseName, "-n", KubeClarityNamespace)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to uninstall kubeclarity: %s. %v", out, err)
+	}
+
+	cmd2 := exec.Command("kubectl", "-n", KubeClarityNamespace, "delete", "pvc", "data-kubeclarity-kubeclarity-postgresql-0")
+	out, err = cmd2.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to delete pvc: %s. %v", out, err)
+	}
+
+	cmd3 := exec.Command("kubectl", "delete", "ns", KubeClarityNamespace)
+	out, err = cmd3.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to delete kubeclarity namespace: %s. %v", out, err)
+	}
+
+	return nil
+}
+
 func PortForwardToKubeClarity(stopCh chan struct{}) {
-	// TODO make it better
 	go func() {
-		err, out := portForward("service", KubeClarityNamespace, KubeClarityServiceName, KubeClarityPortForwardHostPort, KubeClarityPortForwardTargetPort, stopCh)
+		err := portForward("service", KubeClarityNamespace, KubeClarityServiceName, KubeClarityPortForwardHostPort, KubeClarityPortForwardTargetPort, stopCh)
 		if err != nil {
-			fmt.Printf("port forward failed. %s. %v", out, err)
+			fmt.Printf("port forward failed. %v", err)
 			return
 		}
 	}()
@@ -100,7 +126,7 @@ func BoolPtr(val bool) *bool {
 	return &ret
 }
 
-func Int64Ptr(val int64) *int64 {
+func StringPtr(val string) *string {
 	ret := val
 	return &ret
 }
@@ -129,7 +155,6 @@ func WaitForKubeClarityPodRunning(client klient.Client) error {
 	}
 }
 
-
 func CreateNamespace(client klient.Client ,name string) error {
 	var ns = v1.Namespace{
 		TypeMeta:   v12.TypeMeta{
@@ -148,13 +173,27 @@ func CreateNamespace(client klient.Client ,name string) error {
 
 // NON EXPORTED:
 
-func portForward(kind, namespace, name, hostPort, targetPort string, stopCh chan struct{}) (error, []byte) {
+func portForward(kind, namespace, name, hostPort, targetPort string, stopCh chan struct{}) error {
 	cmd := exec.Command("kubectl", "port-forward", "-n", namespace,
 		fmt.Sprintf("%s/%s", kind, name), fmt.Sprintf("%s:%s", hostPort, targetPort))
 
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return err, out
+	processExitedCh := make(chan struct{})
+	var output []byte
+	var err error
+	go func() {
+		output, err = cmd.CombinedOutput()
+		if err != nil {
+			processExitedCh <- struct{}{}
+		}
+	}()
+
+	select {
+	case <-stopCh:
+		if err := cmd.Process.Kill(); err != nil {
+			return fmt.Errorf("failed to kill process: %v", err)
+		}
+		return nil
+	case <-processExitedCh:
+		return fmt.Errorf("port-forward process exited unexpectedly, output: %s", output)
 	}
-	return nil, nil
 }
