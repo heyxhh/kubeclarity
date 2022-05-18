@@ -3,6 +3,7 @@ module github.com/openclarity/kubeclarity/e2e
 go 1.17
 
 require (
+	github.com/CycloneDX/cyclonedx-go v0.5.0
 	github.com/go-openapi/runtime v0.23.3
 	github.com/go-openapi/strfmt v0.21.2
 	github.com/openclarity/kubeclarity/api v0.0.0
@@ -14,7 +15,6 @@ require (
 )
 
 require (
-	github.com/CycloneDX/cyclonedx-go v0.5.0 // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/acobaugh/osrelease v0.1.0 // indirect
 	github.com/anchore/go-rpmdb v0.0.0-20210914181456-a9c52348da63 // indirect
